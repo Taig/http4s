@@ -3,9 +3,11 @@ package servlet
 
 import cats.data.OptionT
 import cats.effect._
+import cats.effect.implicits._
 import cats.implicits.{catsSyntaxEither => _, _}
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.http4s.server._
+
 import scala.concurrent.ExecutionContext
 
 class BlockingHttp4sServlet[F[_]](
@@ -27,11 +29,7 @@ class BlockingHttp4sServlet[F[_]](
         handleRequest(_, servletResponse, bodyWriter)
       )
 
-      F.runAsync(render) {
-          case Right(_) => IO.unit
-          case Left(t) => IO(errorHandler(servletResponse)(t))
-        }
-        .unsafeRunSync()
+      render.toIO.unsafeRunSync()
     } catch errorHandler(servletResponse)
 
   private def handleRequest(
